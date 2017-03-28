@@ -1,0 +1,9 @@
+/control/verbose 2 
+/run/verbose 2 
+/vis/disable 
+/det/slit/x -1.00 mm 
+/det/slit/z 30.00 mm 
+/gun/target/z 0 mm 
+/det/pocket/xShiftPocket -2.40 mm 
+/det/update 
+/run/beamOn 1000000

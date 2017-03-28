@@ -1,0 +1,23 @@
+ # $Id: gps.mac 35 2010-01-14 22:16:26Z schaelic $
+ #
+ # Macro file for deactivation of processes
+ # to be used together with "task3.cc"
+ #
+ /gps/particle proton
+ /gps/energy 0.1 GeV
+ #
+ /run/setCut  1 mm
+ # 
+ # How to print out list of processes
+ #
+ /particle/select proton
+ /particle/process/dump
+ #
+ # Inactivate multiple scattering for proton
+ #
+ /process/inactivate msc
+ #
+ # Activate multiple scattering for proton
+ #
+ #/process/activate msc
+ #

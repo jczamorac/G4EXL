@@ -1,0 +1,592 @@
+//
+// ********************************************************************
+// * DISCLAIMER                                                       *
+// *                                                                  *
+// * The following disclaimer summarizes all the specific disclaimers *
+// * of contributors to this software. The specific disclaimers,which *
+// * govern, are listed with their locations in:                      *
+// *   http://cern.ch/geant4/license                                  *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.                                                             *
+// *                                                                  *
+// * This  code  implementation is the  intellectual property  of the *
+// * GEANT4 collaboration.                                            *
+// * By copying,  distributing  or modifying the Program (or any work *
+// * based  on  the Program)  you indicate  your  acceptance of  this *
+// * statement, and all its terms.                                    *
+// ********************************************************************
+//
+// $Id:$
+// GEANT4 tag $Name:$
+//
+// T. Aso        Original author
+// 
+#include "BeamTestPrimaryGeneratorAction.hh"
+#include "BeamTestPrimaryGeneratorMessenger.hh"
+
+
+#include "G4Event.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4ParticleGun.hh"
+#include "G4ParticleTable.hh"
+#include "Randomize.hh"
+#include "G4SystemOfUnits.hh"
+
+
+#include<iostream>
+#include<fstream>
+#include<cmath>
+#include<string>
+#include <stdlib.h> 
+using namespace std;
+#define pi_gen 3.141592
+#define N 256
+#define N_inel 467
+
+#include "kinematics.h"
+//#include "TB_kinematics.h"
+
+//#define N 258
+//#define N_inel 396
+
+
+ 
+
+
+G4ParticleGun* BeamTestPrimaryGeneratorAction::particleGun(0);
+
+//SeccionEff* BeamTestPrimaryGeneratorAction::apuntador(0);
+
+BeamTestPrimaryGeneratorAction::BeamTestPrimaryGeneratorAction()
+{
+  G4int n_particle = 1;
+  particleGun  = new G4ParticleGun(n_particle);
+
+  gunMessenger = new BeamTestPrimaryGeneratorMessenger(this);
+  
+  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+  G4String particleName;
+  
+  G4ParticleDefinition* particle = particleTable->FindParticle(particleName="alpha");
+  
+  particleGun->SetParticleDefinition(particle);
+
+ particleGun->SetParticleMomentumDirection(G4ThreeVector(-1.,0.,0.));
+ //G4cout<<"angulo aleatotio  "<<angle<<G4endl;
+  particleGun->SetParticleEnergy(63.0*MeV);	
+   
+  
+  
+  particleGun->SetParticlePosition(G4ThreeVector(0.,0.,0.*cm));
+
+    //datos.angulo[0]= 1; 
+	//G4cout<<datos.angulo[0]<<G4endl;
+/*
+	//============================================Llamamos a la seccion eficaz elastica
+	//string filename= "56ni_p_el_4sim.dat";  
+	//string filename= "secciones/11be_p_400_elas.dat";  
+	string filename= "secciones/132sn_a_400_elas.dat";  
+  	ifstream  entrada;
+	double secct=0.;
+	double secct_bef=0.;
+	double paso = 0.15;
+	
+	
+	double a=0.; 
+	double b=0.;
+	double c=0.;
+	
+
+	entrada. open(filename.c_str());
+      	if(entrada.fail() ){
+                       cerr << "error abriendo "<< filename << endl;
+ 			exit(1);
+                      }  
+
+       	for(int k=1;k<N+1;k++){
+        	entrada >> a >> b >> c;  //defino el numero de columnas   
+		secct = secct + sin(a*pi/180.)*b*c*2*pi*paso*pi/180.; //b*c porque es ruth*ratio(cros/ruth)
+		X.push_back(secct); Y.push_back(a);
+		if((secct - secct_bef)<0.0000001) break;		
+		cout << a <<"  "<<secct<<endl;
+		secct_bef = secct;
+	}
+
+	s.set_points(X,Y);
+	cout << "El tamanhos del vector es ahora "<<X.size()<<" "<<X[X.size()-1]<<endl;
+ entrada.close();
+*/
+
+
+
+	//============================================Llamamos a la seccion eficaz ISGMR
+	//string filename= "56ni_p_el_4sim.dat";  
+	//string filename= "secciones/11be_p_400_elas.dat";  
+	string filename= "secciones/isgmr.dat";  
+  	ifstream  entrada;
+	double secct=0.;
+	double secct_bef=0.;
+	double paso = 0.025;
+	
+	
+	double a=0.; 
+	double b=0.;
+	double c=0.;
+	
+
+	entrada. open(filename.c_str());
+      	if(entrada.fail() ){
+                       cerr << "error abriendo "<< filename << endl;
+ 			exit(1);
+                      }  
+
+       	for(int k=1;k<N+1;k++){
+        	entrada >> a >> b >> c;  //defino el numero de columnas   
+		secct = secct + b*paso; // removemos la parte angular porque todo es en agulos muy delanteros
+		X.push_back(secct); Y.push_back(a);
+		if((secct - secct_bef)<0.0000001) break;		
+		cout << a <<"  "<<secct<<endl;
+		secct_bef = secct;
+	}
+
+	s.set_points(X,Y);
+	cout << "El tamanhos del vector es ahora "<<X.size()<<" "<<X[X.size()-1]<<endl;
+ entrada.close();
+
+
+
+	//============================================Llamamos a la seccion eficaz ISGQR
+	//string filename= "56ni_p_el_4sim.dat";  
+	//string filename= "secciones/11be_p_400_elas.dat";  
+	string filename2= "secciones/isgqr.dat";  
+  	ifstream  entrada2;
+	double secct2=0.;
+	double secct_bef2=0.;
+	double paso2 = 0.025;
+	
+	
+	double a2=0.; 
+	double b2=0.;
+	double c2=0.;
+	
+
+	entrada2. open(filename2.c_str());
+      	if(entrada2.fail() ){
+                       cerr << "error abriendo "<< filename2 << endl;
+ 			exit(1);
+                      }  
+
+       	for(int k=1;k<N+1;k++){
+        	entrada2 >> a2 >> b2 >> c2;  //defino el numero de columnas   
+		secct2 = secct2 + b2*paso2; // removemos la parte angular porque todo es en agulos muy delanteros
+		X2.push_back(secct2); Y2.push_back(a2);
+		if((secct2 - secct_bef2)<0.0000001) break;		
+		cout << a2 <<"  "<<secct2<<endl;
+		secct_bef2 = secct2;
+	}
+
+	s2.set_points(X2,Y2);
+	cout << "El tamanhos del vector es ahora "<<X2.size()<<" "<<X2[X2.size()-1]<<endl;
+ entrada2.close();
+
+
+
+
+/*
+	//============================================Llamamos a la seccion eficaz transferencia
+	//string filename= "56ni_p_el_4sim.dat";  
+	//string filename= "secciones/11be_p_400_elas.dat";  
+	string filename= "secciones/tranfer.dat";  
+  	ifstream  entrada;
+	double secct=0.;
+	double secct_bef=0.;
+	double paso = 1.0;
+	
+	
+	double a=0.; 
+	double b=0.;
+	double c=0.;
+	
+
+	entrada. open(filename.c_str());
+      	if(entrada.fail() ){
+                       cerr << "error abriendo "<< filename << endl;
+ 			exit(1);
+                      }  
+
+       	for(int k=1;k<N+1;k++){
+        	entrada >> a >> b >> c;  //defino el numero de columnas   
+		//secct = secct + sin(a*pi/180.)*b*c*2*pi*paso*pi/180.; //b*c porque es ruth*ratio(cros/ruth)
+		secct = secct + b*paso; //
+		X.push_back(secct); Y.push_back(a);
+		if((secct - secct_bef)<0.0000001) break;		
+		cout << a <<"  "<<secct<<endl;
+		secct_bef = secct;
+	}
+
+	s.set_points(X,Y);
+	cout << "El tamanhos del vector es ahora "<<X.size()<<" "<<X[X.size()-1]<<endl;
+ entrada.close();
+*/
+
+
+}
+
+
+BeamTestPrimaryGeneratorAction::~BeamTestPrimaryGeneratorAction()
+{
+  delete particleGun;
+  delete gunMessenger;
+}
+
+
+
+void BeamTestPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
+{
+
+
+	//cout << "El tamanhos del vector es ahora "<<X.size()<<" "<<X[X.size()-1]<<"  "<<s(X[X.size()-1]*0.5)<<endl;
+	//G4cout<<"la posicion z del target  "<<Z_target/mm<<G4endl;
+
+	/* G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+         G4String particleName;
+  
+         G4ParticleDefinition* particle = particleTable->FindParticle(particleName="alpha");
+  
+         particleGun->SetParticleDefinition(particle);
+*/
+
+
+
+
+
+/*
+	//------------generate a rando position in 3D based in 2 gaussian superposition
+
+ G4double x, y, z;
+ //double rx, ry, rz;
+ G4double sigma_beam, sigma_target, sigma_x;
+ G4double x0b, x0t, x0;
+ G4double y0, z0;
+
+  //seed();
+ 	
+	x=0.*mm;
+	y=0.*mm;
+	z=0.*mm;
+	sigma_beam = 3.0*mm/2.35;
+	sigma_target = 5.0*mm/2.35;
+	y0 = 0.*mm;
+	z0 = Z_target;
+	x0b = 0.000*mm;
+	x0t = 0.58*mm; //0.58
+	
+
+	x0 = (x0b/sigma_beam + x0t/sigma_target)/(1./sigma_beam + 1./sigma_target);
+	sigma_x = sigma_beam*sigma_target/(sqrt((sigma_beam+sigma_target-sqrt(2*sigma_beam*sigma_target))*(sigma_beam+sigma_target+sqrt(2*sigma_beam*sigma_target))));
+
+
+	
+
+  do{
+	x = G4RandGauss::shoot(x0,sigma_x);
+	y = G4RandGauss::shoot(y0,sigma_beam);
+	z = G4RandGauss::shoot(z0,sigma_target);
+	if( abs(x) < 3*(abs(x0)+sigma_x) && abs(y) < 3*(abs(y0)+sigma_beam) && abs(z) < 3*(abs(z0)+sigma_target)){break;}
+	}
+	while(1==1);
+	
+	//x /=mm;
+	//y /=mm;
+	//z /=mm;
+	particleGun->SetParticlePosition(G4ThreeVector(x,y,z));
+
+//-------------------------------------------------------------------------------------------------------------
+*/
+
+//----------------------------------generador con densidad constante, cilindo vs gaussiana
+
+
+ G4double x, y, z;
+ G4double sigma_beam, radio_target;
+ G4double x0, y0, z0;
+ //G4double radio, sinomega;
+
+  //seed();
+ 	
+	x=0.*mm;
+	y=0.*mm;
+	z=0.*mm;
+	sigma_beam = 1.5*mm/2.35;  //alta intensidad 3mm-sigma
+	radio_target = 2.00*mm;  //ojo, para el actual en el esr es 3.45 mm
+	y0 = 0.*mm;
+	z0 = Z_target;
+	x0 = 0.58*mm; //0.58 desfase del jet
+	
+
+	do{
+		//radio = radio_target*(2.*G4UniformRand() -1.);
+		//sinomega = 2.*G4UniformRand() - 1.0;
+		x = G4RandGauss::shoot(x0,sigma_beam);
+		y = G4RandGauss::shoot(y0,sigma_beam);
+		z = radio_target*(2.*G4UniformRand() -1.) + z0;
+			
+
+	if( abs(x) < 3*(abs(x0)+sigma_beam) && abs(y) < 3*(abs(y0)+sigma_beam) && abs(z) < (abs(z0)+radio_target)){break;}
+	}
+	while(1==1);
+	
+	//x =0.;
+	//y =0.;
+	//z =0.;
+	particleGun->SetParticlePosition(G4ThreeVector(x,y,z));
+
+
+
+//--------------------------------------------------------------------------------------------
+
+
+/*
+//--**************************************************************************************Incluyendo la seccion eficaz y cinematica
+	 G4double w = X[X.size()-1]*(G4UniformRand());
+	 G4double theta_cm = s(w);//ojo con las unidades!
+	 if(theta_cm<0) theta_cm =0;	
+	 G4double theta_lab = 0;
+	 G4double phi = (2.*pi)*(G4UniformRand());
+	 G4double kinE = 0.*MeV;
+	 //G4cout<<"hello!"<<" "<<theta_cm<<G4endl;
+
+	double *kinem;
+	kinem = kinematics(theta_cm, 0.);  //thcm y enerx (deg, MeV)
+	theta_lab = (*(kinem)) *(pi/180.);
+	kinE = *(kinem+1); 
+
+
+	//G4cout<<"hello!"<<" "<<theta_lab*180./pi<<"  "<<kinE<<G4endl;
+
+	G4ParticleTable* particleTable1 = G4ParticleTable::GetParticleTable();
+        G4String particleName1;
+        G4ParticleDefinition* particle1 = particleTable1->FindParticle(particleName1="deuteron");
+        particleGun->SetParticleDefinition(particle1);
+	particleGun->SetParticleEnergy(kinE);
+	particleGun->SetParticleMomentumDirection(G4ThreeVector(sin(theta_lab)*cos(phi),sin(theta_lab)*sin(phi),cos(theta_lab)));
+	particleGun->GeneratePrimaryVertex(anEvent);
+	
+//--**************************************************************************************
+*/
+
+
+//--**************************************************************************************Incluyendo la seccion eficaz y cinematica con dos canales
+
+	double *kinem;
+	G4ParticleTable* particleTable1 = G4ParticleTable::GetParticleTable();
+        G4String particleName1;
+        G4ParticleDefinition* particle1 = particleTable1->FindParticle(particleName1="alpha");
+        particleGun->SetParticleDefinition(particle1);
+	G4double theta_lab = 0;
+	G4double kinE = 0.*MeV;
+	G4double rando = G4UniformRand();	
+
+	if(rando<-1.5){  //ISGMR
+	 	G4double w = X[X.size()-1]*(G4UniformRand());
+	 	G4double theta_cm = s(w);//ojo con las unidades!
+		if(theta_cm<0) theta_cm =0;
+	 	
+	
+		kinem = kinematics(theta_cm, G4RandGauss::shoot(15.,2.));  //thcm y enerx (deg, MeV)
+		theta_lab = (*(kinem)) *(pi/180.);
+		kinE = *(kinem+1); 
+		//G4cout<<"hello!"<<" "<<theta_cm<<"  "<<kinE<<G4endl;
+		//G4cout<<theta_cm<<G4endl;
+		
+		}
+	else{  //ISGQR
+	 	G4double w = X2[X2.size()-1]*(G4UniformRand());
+	 	G4double theta_cm = s2(w);//ojo con las unidades!
+	 	if(theta_cm<0) theta_cm =0;	
+	 	//G4cout<<"hello!"<<" "<<theta_cm<<G4endl;
+	
+		kinem = kinematics(theta_cm, G4RandGauss::shoot(12.,1.4));  //thcm y enerx (deg, MeV)
+		theta_lab = (*(kinem)) *(pi/180.);
+		kinE = *(kinem+1); 
+		//G4cout<<"hello!"<<" "<<theta_cm<<"  "<<kinE<<G4endl;
+		//G4cout<<theta_cm<<G4endl;
+		}
+
+	
+	G4double phi = (2.*pi)*(G4UniformRand());
+	particleGun->SetParticleEnergy(kinE);
+	particleGun->SetParticleMomentumDirection(G4ThreeVector(sin(theta_lab)*cos(phi),sin(theta_lab)*sin(phi),cos(theta_lab)));
+	particleGun->GeneratePrimaryVertex(anEvent); 
+//--**************************************************************************************
+
+
+/*
+//--**************************************************************************************Solo cinematica de dos cuerpos
+	double *kinem;
+
+
+	do{
+	SORT:
+	r = 2.2*G4UniformRand();  //30 para 56Ni
+	w = G4UniformRand();
+//  select an event elastic or inel.....depends of total cross section ratio w = elas/(elas+inel)=0.87  0.73
+
+	if(w<=1.80){	
+	//------------elastico------------------------------------------------------------------
+	//G4ParticleDefinition* particle = particleTable->FindParticle(particleName="deuteron");
+	//particleGun->SetParticleDefinition(particle);
+	//int j = N*r;
+		 kinem = kinematics(r, G4RandGauss::shoot(19.,3.));
+		// kinem = kinematics(r, 0.);
+		 theta = (*(kinem)) *(pi/180);
+		 kinE = *(kinem+1);
+		//if(kinE>25.) goto SORT; 
+	}
+	else{
+	if(w<0.90){
+	//G4cout<<"hello!"<<G4endl;
+	//G4ParticleDefinition* particle = particleTable->FindParticle(particleName="proton");
+	//particleGun->SetParticleDefinition(particle);
+		 kinem = kinematics(r, G4RandGauss::shoot(19.5,2.12));
+		 theta = (*(kinem)) *(pi/180);
+		 kinE = *(kinem+1); 
+	}
+	else{
+		 kinem = kinematics(r, G4RandGauss::shoot(30.0,3.));
+		 theta = (*(kinem)) *(pi/180);
+		 kinE = *(kinem+1); 
+
+	}	
+	
+	}
+	
+	if((((*(kinem))>20. && (*(kinem))<45.) ) && kinE<1. ){break;}
+	}
+	while(1==1);
+//--**************************************************************************************
+*/
+
+
+/*
+//--**************************************************************************************Solo cinematica de tres cuerpos
+
+	//G4double r = G4UniformRand();
+	G4double theta_v = 0;
+	G4double phi_v = 0;
+	G4double kinE_v = 0.*MeV;
+	G4double theta_re = 0;
+	G4double phi_re = 0;
+	G4double kinE_re = 0.*MeV;
+	//G4double sigmaE = 0.*MeV;
+	//G4double w = G4UniformRand();
+
+
+	double *kinem3B;
+
+	kinem3B = TB_kinematics( 0.);  //excitacion del core
+
+	
+	theta_v = (*(kinem3B)) *(pi_gen/180);
+	phi_v = (*(kinem3B+1)) *(pi_gen/180);
+	kinE_v = *(kinem3B+2);
+	
+	theta_re = (*(kinem3B+3)) *(pi_gen/180);
+	phi_re = (*(kinem3B+4)) *(pi_gen/180);
+	kinE_re = *(kinem3B+5);
+	
+		
+	//theta_v = 45 *(pi_gen/180);
+	//phi_v = 0 *(pi_gen/180);
+	//kinE_v = 10;
+	
+	//theta_re = 20 *(pi_gen/180);
+	//phi_re = 0 *(pi_gen/180);
+	//kinE_re = 10;
+	
+	 G4ParticleTable* particleTable1 = G4ParticleTable::GetParticleTable();
+         G4String particleName1;
+         G4ParticleDefinition* particle1 = particleTable1->FindParticle(particleName1="proton");
+         particleGun->SetParticleDefinition(particle1);
+	particleGun->SetParticleEnergy(kinE_v);
+	particleGun->SetParticleMomentumDirection(G4ThreeVector(sin(theta_v)*cos(phi_v),sin(theta_v)*sin(phi_v),cos(theta_v)));
+	particleGun->GeneratePrimaryVertex(anEvent);
+
+         G4ParticleTable* particleTable2 = G4ParticleTable::GetParticleTable();
+         G4String particleName2;
+         G4ParticleDefinition* particle2 = particleTable2->FindParticle(particleName2="proton");
+         particleGun->SetParticleDefinition(particle2);
+	particleGun->SetParticleEnergy(kinE_re);
+	particleGun->SetParticleMomentumDirection(G4ThreeVector(sin(theta_re)*cos(phi_re),sin(theta_re)*sin(phi_re),cos(theta_re)));
+	particleGun->GeneratePrimaryVertex(anEvent);
+
+//--**************************************************************************************
+*/
+
+
+
+/*	
+////----------------------------------------produccion uniforme----------------------------
+	//kinE /= MeV;
+  
+   
+     G4double kinE = 9000.0*MeV;
+    //G4double sigmaE = 0.42*MeV;
+
+    //kinE = G4RandGauss::shoot(kinE,sigmaE);
+    
+    particleGun->SetParticleEnergy(kinE);
+     //G4cout<<kinE<<G4endl;
+    G4double theta=32.5*pi/180;
+
+    //theta=(90.-20.*G4UniformRand())*(pi/180);
+     // G4double theta = (90. - 20.*(G4UniformRand()))*(pi/180.);
+
+	G4double valx = 0.;
+	G4double valy = 0.;
+	G4double vals = 0.;
+	G4double valz = 0.;
+
+	do{
+		G4double vx = 2*G4UniformRand() -1.;
+		G4double vy = 2*G4UniformRand() -1.;
+		vals = vx*vx +vy*vy;
+		//valx = vx;
+		//valy = vy;
+	
+		if(vals < 1){
+			valz = abs(1. - 2*vals) ;
+			valx = 2.*vx*sqrt((1.-vals));
+			valy = 2.*vy*sqrt((1.-vals));
+			break;
+			}
+		
+	 } while(1==1); 
+
+	
+    //G4double  theta = (15.*pi/180.)*(2.*CLHEP::RandFlat::shoot() -1.);
+	//G4double  theta = (pi/180.)*(CLHEP::RandFlat::shoot(15.,45.) );
+	//G4double  theta = (G4UniformRand());
+
+    //G4double phi = (15.*pi/180.)*(2.*G4UniformRand()-1.) +270.*pi/180. ;
+	//G4double phi = 270. ;
+      G4double phi = (15.*pi/180.)*(2.*G4UniformRand()-1.);
+  //  G4double phi = 360.*pi/180;
+   // G4double theta = 33.5*(pi/180.);
+   particleGun->SetParticleMomentumDirection(G4ThreeVector(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)));
+
+  // G4cout<<valx<<'\t'<<valy<<'\t'<<valz<<endl;
+   
+   //particleGun->SetParticleMomentumDirection(G4ThreeVector(valx,valy,valz));	
+  particleGun->GeneratePrimaryVertex(anEvent);
+  //---------------------------------------------------------------------------------------------------  
+*/
+
+
+
+
+}

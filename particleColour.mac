@@ -1,0 +1,9 @@
+ # enable colouring per particle ID
+ /vis/modeling/trajectories/create/drawByParticleID
+ /vis/modeling/trajectories/drawByParticleID-0/set pi+ yellow
+ /vis/modeling/trajectories/drawByParticleID-0/set pi- blue 
+ /vis/modeling/trajectories/drawByParticleID-0/set e- red
+ /vis/modeling/trajectories/drawByParticleID-0/set e+ white
+ /vis/modeling/trajectories/drawByParticleID-0/set gamma gray
+ /vis/modeling/trajectories/drawByParticleID-0/set proton blue
+ /vis/modeling/trajectories/drawByParticleID-0/set neutron green

@@ -1,0 +1,11 @@
+ # $Id: gps.mac 35 2010-01-14 22:16:26Z schaelic $
+ #
+ # Macro file for modifications of primary particle and cuts
+ # to be used together with "task3.cc"
+ #
+ /gps/particle proton
+ /gps/energy 0.1 GeV
+ #
+ /run/setCut  0.01 mm
+ /run/beamOn 100
+ # 

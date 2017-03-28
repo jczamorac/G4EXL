@@ -1,0 +1,19 @@
+ # $Id: gps.mac 35 2010-01-14 22:16:26Z schaelic $
+ #
+ # Macro file to control list of particles and processes
+ # to be used together with "task3.cc"
+ # 
+ # How to print out the list of particles
+ #
+ /particle/list
+ # 
+ # How to print out list of processes for given particle
+ #
+ /particle/select proton
+ /particle/process/dump
+ #
+ # How to printout detailed information about EM processes
+ #
+ /process/eLoss/verbose 1
+ /run/beamOn 1
+ #

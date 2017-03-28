@@ -1,0 +1,348 @@
+#define simClassEXL_cxx
+#include "simClassEXL.h"
+#include <TH2.h>
+#include <TStyle.h>
+#include <TCanvas.h>
+
+
+#include <fstream>
+#include <cstring>
+#include <sstream>
+#include <ctime>
+#include <cmath>
+#define N 736
+
+
+using namespace std;
+
+void simClassEXL::Loop()
+{
+ //   In a ROOT session, you can do:
+  //      Root > .L analisis.C
+  //      Root > analisis t
+  //      Root > t.GetEntry(12); // Fill t data members with entry number 12
+  //      Root > t.Show();       // Show values of entry 12
+  //      Root > t.Show(16);     // Read and show values of entry 16
+  //      Root > t.Loop();       // Loop on all entries
+  //
+
+  //     This is the loop skeleton where:
+  //    jentry is the global entry number in the chain
+  //    ientry is the entry number in the current Tree
+  //  Note that the argument to GetEntry must be:
+  //    jentry for TChain::GetEntry
+  //    ientry for TTree::GetEntry and TBranch::GetEntry
+  //
+  //       To read only selected branches, Insert statements like:
+  // METHOD1:
+  fChain->SetBranchStatus("*",1);  // disable all branches
+  /*fChain->SetBranchStatus("pos_x_dssd2",1);  // activate branchname
+  fChain->SetBranchStatus("pos_y_dssd2",1);  // activate branchname
+  fChain->SetBranchStatus("ener_dssd2",1);  // activate branchname
+  fChain->SetBranchStatus("truthAngle_theta",1);  // activate branchname
+  fChain->SetBranchStatus("truthAngle_phi",1);  // activate branchname
+  */
+  if (fChain == 0) return;
+
+
+  //-----------------tiempo-------------------------------------------
+  Float_t Ttotal,inicio, final;
+  inicio=clock();
+  //------------------------------------------------------------------
+
+
+ //-------------------------------informacion de cada detector
+
+     ifstream  entrada;
+     entrada. open("info_detectoresEXL.dat"); 
+      	if(entrada.fail() ){
+                       cerr << "error abriendo "<< "INFO_EXL" << endl;
+ 			exit(1);
+                      }
+	Float_t a1,a2, a3, a4;
+	Float_t A1[N], A2[N], A3[N], A4[N];
+	memset( A1, 0, N*sizeof(float ) );
+	memset( A2, 0, N*sizeof(float ) );
+	memset( A3, 0, N*sizeof(float ) );
+	memset( A4, 0, N*sizeof(float ) );
+
+    for(Int_t u=0;u<N;u++){
+		// --detectorID -- theta[deg] -- Phi[deg]  -- Radius[mm]
+		entrada>>a1>>a2>>a3>>a4;
+		A1[u]=a1; A2[u]=a2; A3[u]=a3; A4[u]=a4;
+		//cout<<A1[u]<<" "<<A4[u]<<endl;
+	}	  
+//----------------------------------------------------------------		
+
+//-----------------------definimos variables
+
+	TFile* outfile;
+    	outfile   = TFile::Open("histo_EXL_sim_132sn_reso_quad.root","recreate");
+     	outfile->mkdir("Digit_singles");
+     	outfile->mkdir("E_singles");	
+     	outfile->mkdir("Section_D");
+	outfile->mkdir("Section_C");
+	outfile->mkdir("Section_B");
+	outfile->mkdir("Section_A");
+	outfile->mkdir("Section_E");
+	outfile->mkdir("Section_F");
+	outfile->mkdir("Crystal");
+
+	TH1F *h_E_det[N];
+	TH1F *h_E_simple[N];
+	 for(int i=0;i<N;i++){
+		ostringstream nombre_Edet;
+   		nombre_Edet << "E_det_" << i ;
+		h_E_det[i]  = new TH1F(nombre_Edet.str().data(),"",4092,0.,50.);
+
+		ostringstream nombre_Edet_simple;
+   		nombre_Edet_simple << "E_det_simple_" << i ;
+		h_E_simple[i]  = new TH1F(nombre_Edet_simple.str().data(),"",4092,0.,50.);
+	}
+
+	TH1F *h_crystal =  new TH1F("E_Crystal","",4092, 0, 2000.);
+	TH1F *h_sin1 =  new TH1F("ring1","",4092, 0,10.);
+	TH1F *h_sin2 =  new TH1F("ring2","",4092, 0,10.);
+	TH1F *h_sin3 =  new TH1F("ring3","",4092, 0,10.);
+	TH1F *h_sin4 =  new TH1F("ring4","",4092, 0,10.);
+	TH1F *h_sin5 =  new TH1F("ring5","",4092, 0,10.);
+	TH1F *h_sin6 =  new TH1F("ring6","",4092, 0,10.);
+	TH1F *h_sin7 =  new TH1F("ring7","",4092, 0,10.);
+	
+	TH2F *hDpart_theta =  new TH2F("Dpart_theta_2D","",384, 10., 45., 4092, 0., 150.);
+	TH2F *hCpart_theta =  new TH2F("Cpart_theta_2D","",512, 45., 75., 4092, 0., 150.);
+	TH2F *hBpart_theta =  new TH2F("Bpart_theta_2D","",128, 75., 80., 4092, 0., 150.);
+	TH2F *hApart_theta =  new TH2F("Apart_theta_2D","",128, 80., 89., 4092, 0., 150.);
+	TH2F *hEpart_theta =  new TH2F("Epart_theta_2D","",384, 90., 120., 4092, 0., 150.);
+	TH2F *hFpart_theta =  new TH2F("Fpart_theta_2D","",256, 120., 170., 4092, 0., 150.);
+
+	TH2F *hABpart_theta =  new TH2F("ABpart_theta_2D","",128, 75., 89., 4092, 0., 150.);
+	TH2F *hDCBApart_theta =  new TH2F("DCBBpart_theta_2D","",512, 15., 89., 4092, 0., 25.);
+	TH2F *hFEABpart_theta =  new TH2F("FEABpart_theta_2D","",512, 75., 170., 4092, 0., 100.);
+
+	TH2F *hcoin_theta =  new TH2F("theta_coin","",256, 0., 90., 256, 0., 90.);
+	TH2F *hcoin_phi =  new TH2F("phi_coin","",512, 0., 360., 512, 0., 360.);
+
+
+	TH2F *hDpart_phi =  new TH2F("Dpart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	TH2F *hCpart_phi =  new TH2F("Cpart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	TH2F *hBpart_phi =  new TH2F("Bpart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	TH2F *hApart_phi =  new TH2F("Apart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	TH2F *hEpart_phi =  new TH2F("Epart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	TH2F *hFpart_phi =  new TH2F("Fpart_phi_2D","",1536, 0., 360., 4092, 0., 150.);
+	
+	
+
+	
+	Int_t det = 0;
+	Float_t thetaval = 0;
+	Int_t flag_det = 0;
+	Int_t last_det = 0;
+	Float_t Ener = 0;
+	Float_t thetain = 0;
+	Float_t phival = 0;
+	Float_t phival_before = 0;
+	Float_t phiin = 0;
+	Int_t detin = 0;
+	Int_t flag_coin = 0;
+	Int_t det_before = 0.;
+	Float_t theta1 = 0;
+	Float_t theta2 = 0;
+	Float_t phi1 = 0;
+	Float_t phi2 = 0;
+	
+//------------------------------------------
+
+//-------------------Loop de los eventos	
+	 Long64_t nentries = fChain->GetEntriesFast();
+	 Long64_t nbytes = 0, nb = 0;
+   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+    // for (Long64_t jentry=0; jentry<100000;jentry++) {
+      Long64_t ientry = LoadTree(jentry);
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);   nbytes += nb;
+
+	//for numero = 0 numero<N...buscamos ener>0 y obtenemos x,y
+	//in case otro detect ener>0, theta0==theta1 && phi0==phi1 and numero0<numero1...sum up energy
+
+		
+		flag_det = 0;
+		detin = 0;
+		flag_coin = 0;
+		phival_before = 0;
+		int * hits = new int[N];
+		std::fill(hits, hits+N, -10);
+
+		int * sumados = new int[N];
+		std::fill(sumados, sumados+N, -10);
+
+		int * Det_coin = new int[2];
+		std::fill(Det_coin, Det_coin+2, -10);
+
+		for(det=0;det<N;det++){
+			h_E_det[det]->Fill( 0.001*DSSD1[0][det]);
+			if((det>=0 && det<=11)) h_sin1->Fill(0.001*DSSD1[0][det]);
+			if((det>=36 && det<=55)) h_sin2->Fill(0.001*DSSD1[0][det]);
+			if((det>=96 && det<=119)) h_sin3->Fill(0.001*DSSD1[0][det]);
+			if((det>=168 && det<=189)) h_sin4->Fill(0.001*DSSD1[0][det]);
+			if((det>=212 && det<=233)) h_sin5->Fill(0.001*DSSD1[0][det]);
+			if((det>=256 && det<=277)) h_sin6->Fill(0.001*DSSD1[0][det]);
+			if((det>=300 && det<=321)) h_sin7->Fill(0.001*DSSD1[0][det]);
+			if(ener_1[det]>0){
+				h_E_simple[det]->Fill(ener_1[det]);	
+				*(hits+flag_det) = det;
+				flag_det++;
+
+				if((det>=0 && det<=11) || (det>=36 && det<=55) || (det>=96 && det<=119) || (det>=168 && det<=189) || (det>=212 && det<=233) || (det>=256 && det<=277) || (det>=300 && det<=321) || (det>=344 && det<=365) || (det>=432 && det<=453)){
+				//phival = +atan(pos_y_1[det]/A4[det])*180./3.141592 + 10.0*A3[det]/10.00;
+				if( (flag_coin>0 && (abs(A3[*(Det_coin+flag_coin-1)]-A3[det])<40 || (abs(A3[*(Det_coin+flag_coin-1)]-A3[det])>330 ) ))  ||  pos_x_1[det]==-1000) continue;
+				flag_coin ++;
+				*(Det_coin+flag_coin-1) = det;
+				//cout<<det<<"  coincidencia  "<<flag_coin<<"  "<<*(Det_coin+flag_coin-1)<<endl;
+				det_before = det;
+				//phival_before = phival; 
+				}
+			}
+		}
+
+		for(det=0;det<flag_det;det++){
+			Ener = 0;
+			if(pos_x_1[(*(hits+det))]==-1000) continue;
+			thetaval = -atan(pos_x_1[(*(hits+det))]/A4[(*(hits+det))])*180./3.141592 + 10.0*A2[(*(hits+det))]/10.00;
+			phival = +atan(pos_y_1[(*(hits+det))]/A4[(*(hits+det))])*180./3.141592 + 10.0*A3[(*(hits+det))]/10.00;
+			for(int w =det; w<flag_det; w++){
+				if((A2[(*(hits+det))]==A2[(*(hits+w))]) && (A3[(*(hits+det))]==A3[(*(hits+w))]) &&  ((*(sumados+w))==-10)){
+					//cout<<*(hits+w)<<" "<<A2[(*(hits+w))]<<" "<<A3[(*(hits+w))]<<" "<<det<<" "<<w<<" "<<(*(sumados+w))<<"  "<<pos_x_1[(*(hits+w))]<<endl;
+					Ener +=0.001*DSSD1[0][(*(hits+w))];
+					(*(sumados+w))=0;
+					}
+				}
+			//if(Ener>0) cout<<*(hits+det)<<" "<<thetaval<<" "<<phival<<"  "<<pos_y_1[(*(hits+det))]<<"  "<<pos_x_1[(*(hits+det))]<<endl;
+			if(Ener>0){
+			if((*(hits+det))>=0 && (*(hits+det))<168){hDpart_theta->Fill(thetaval,Ener); hDpart_phi->Fill(phival,Ener);}
+			if((*(hits+det))>=168 && (*(hits+det))<344){hCpart_theta->Fill(thetaval,Ener); hCpart_phi->Fill(phival,Ener);}
+			if((*(hits+det))>=344 && (*(hits+det))<432){hBpart_theta->Fill(thetaval,Ener); hBpart_phi->Fill(phival,Ener);}
+			if((*(hits+det))>=432 && (*(hits+det))<476){hApart_theta->Fill(thetaval,Ener); hApart_phi->Fill(phival,Ener);}
+			if((*(hits+det))>=476 && (*(hits+det))<608){hEpart_theta->Fill(thetaval,Ener); hEpart_phi->Fill(phival,Ener);}
+			if((*(hits+det))>=608 && (*(hits+det))<736){hFpart_theta->Fill(thetaval,Ener); hFpart_phi->Fill(phival,Ener);}
+
+			//combinaciones
+			if(((*(hits+det))>=344 && (*(hits+det))<432) || ((*(hits+det))>=432 && (*(hits+det))<476) ){
+				hABpart_theta->Fill(thetaval,Ener);
+				}
+			if(((*(hits+det))>=0 && (*(hits+det))<476) ){
+				hDCBApart_theta->Fill(thetaval,Ener);
+				}
+			if(((*(hits+det))>=334 && (*(hits+det))<735) ){
+				hFEABpart_theta->Fill(thetaval,Ener);
+				}
+			}
+			
+
+			theta1 = -atan(pos_x_1[(*(Det_coin))]/A4[(*(Det_coin))])*180./3.141592 + 10.0*A2[(*(Det_coin))]/10.00;
+			phi1 = +atan(pos_y_1[(*(Det_coin))]/A4[(*(Det_coin))])*180./3.141592 + 10.0*A3[(*(Det_coin))]/10.00;
+			theta2 = -atan(pos_x_1[(*(Det_coin+1))]/A4[(*(Det_coin+1))])*180./3.141592 + 10.0*A2[(*(Det_coin+1))]/10.00;
+			phi2 = +atan(pos_y_1[(*(Det_coin+1))]/A4[(*(Det_coin+1))])*180./3.141592 + 10.0*A3[(*(Det_coin+1))]/10.00;
+			//cout<<theta2<<"    "<<phi2<<"  "<<pos_x_1[(*(Det_coin+1))]<<"  "<<A4[(*(Det_coin+1))]<<"  "<<*(Det_coin+1)<<"  "<<A3[(*(Det_coin+1))]<<endl;
+		}
+		//cout<<theta1<<"    "<<theta2<<"  "<<pos_x_1[(*(Det_coin+1))]<<"  "<<A4[(*(Det_coin+1))]<<endl;
+		if(*(Det_coin)>0 && *(Det_coin+1)>0 ){
+				//if(phi1>330) cout<<theta1<<"    "<<theta2<<"  "<<pos_x_1[(*(Det_coin))]<<"  "<<A4[(*(Det_coin))]<<"  "<<*(Det_coin)<<"  "<<*(Det_coin+1)<<endl;
+				if(((Float_t)rand()/(Float_t)RAND_MAX)<0.5){
+						hcoin_theta->Fill(theta1,theta2);
+						hcoin_phi->Fill(phi1,phi2);
+					}
+				else{
+						hcoin_theta->Fill(theta2,theta1);
+						hcoin_phi->Fill(phi2,phi1);
+
+				}
+			}
+		//cout<<"*********************************"<<endl;
+		if(Ener_crystal>0) h_crystal->Fill(Ener_crystal);
+	}
+//------------------------------------------------
+
+//-----------------------------salvamos y cerramos
+   for(det=0;det<N;det++){
+	outfile->cd("Digit_singles");
+	h_E_det[det]->Write();
+	delete h_E_det[det];
+	outfile->cd("E_singles");
+	h_E_simple[det]->Write();
+	delete h_E_simple[det];
+	}
+
+   outfile->cd("Crystal");
+   hABpart_theta->Write();
+   delete hABpart_theta;
+   hDCBApart_theta->Write();
+   delete hDCBApart_theta;	
+   h_crystal->Write();
+   hFEABpart_theta->Write();
+   delete hFEABpart_theta;	
+   delete h_crystal;
+   h_sin1->Write();
+   delete h_sin1;
+   h_sin2->Write();
+   delete h_sin2;
+   h_sin3->Write();
+   delete h_sin3;
+   h_sin4->Write();
+   delete h_sin4;
+   h_sin5->Write();
+   delete h_sin5;
+   h_sin6->Write();
+   delete h_sin6;
+   h_sin7->Write();
+   delete h_sin7;
+   hcoin_theta->Write();
+   delete hcoin_theta;
+   hcoin_phi->Write();
+   delete hcoin_phi;
+
+   outfile->cd("Section_D");
+   hDpart_theta->Write();
+   hDpart_phi->Write();	
+
+   outfile->cd("Section_C");
+   hCpart_theta->Write();
+   hCpart_phi->Write();	
+
+   outfile->cd("Section_B");
+   hBpart_theta->Write();
+   hBpart_phi->Write();	
+
+   outfile->cd("Section_A");
+   hApart_theta->Write();
+   hApart_phi->Write();	
+
+   outfile->cd("Section_E");
+   hEpart_theta->Write();
+   hEpart_phi->Write();	
+
+   outfile->cd("Section_F");
+   hFpart_theta->Write();
+   hFpart_phi->Write();	
+  
+
+  delete hDpart_theta;
+  delete hCpart_theta; 
+  delete hBpart_theta; 
+  delete hApart_theta; 
+  delete hEpart_theta; 
+  delete hFpart_theta;
+  delete hDpart_phi;  
+  delete hCpart_phi;  
+  delete hBpart_phi;  
+  delete hApart_phi;  
+  delete hEpart_phi;  
+  delete hFpart_phi;  
+
+   outfile->Close();	
+ entrada.close();
+  //---------------------imprime tiempo------------------------------------------------------
+  final=clock();
+  Ttotal=(final-inicio)/(double) CLOCKS_PER_SEC;
+  cout<<"tiempo de ejecucion: "<<Ttotal<<" segundos"<<endl;
+}

@@ -1,0 +1,59 @@
+ # $Id: vis.mac 32 2010-01-14 12:58:19Z adotti $
+ #
+ # Macro file for the initialization phase of "task2.cc"
+ # when runing in interactive mode
+ #
+ # Sets some default verbose
+ #
+ /control/verbose 2
+ /run/verbose 2
+ #
+ # Create a scene handler for a specific graphics system
+ # (Edit the next line(s) to choose another graphics system)
+ #
+# /vis/open OGLIX 600x600-0+0
+ #/vis/open OGLIQt 600x600-0+0
+ #
+ #/vis/open OGLIXm
+ #####/vis/open OGLSXm
+ #/vis/open HepRepXML
+/vis/open HepRepFile
+ #
+# /vis/open DAWNFILE
+#/vis/open DAWN
+ #
+ # draw scene
+ #
+#/vis/open RayTracerX
+/vis/drawVolume
+/vis/viewer/set/viewpointThetaPhi 30 30
+/vis/viewer/refresh
+
+ 
+ /vis/viewer/set/viewpointThetaPhi 90 180 deg
+ /vis/viewer/zoom 0.8
+ #
+ # for drawing the tracks
+ /vis/scene/add/trajectories
+ # (if too many tracks cause core dump => /tracking/storeTrajectory 0)
+ # for drawing the hits, uncomment next line
+ # /vis/scene/add/hits
+ # (if you prefer refreshing each event, comment out next line)
+/vis/scene/endOfEventAction accumulate 
+ #
+/vis/disable
+#/gun/particle ion
+#/gun/ion 28 56 28
+
+/det/slit/x -2.4 mm
+#/det/slit/x -2.4 mm
+/det/slit/z 30 mm
+/gun/target/z 0.0 mm
+/det/pocket/xShiftPocket -20.4 mm
+/det/update
+ 
+
+
+#/run/beamOn 1000
+/run/beamOn 1000000
+#/run/beamOn 10000000
